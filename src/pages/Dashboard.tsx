@@ -16,23 +16,70 @@ import {
   Menu,
   X
 } from "lucide-react";
-import { sampleIncidents, sampleMessages, sampleShelters } from "@/data/sampleData";
+import { sampleIncidents, sampleMessages, sampleShelters, Incident } from "@/data/sampleData";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Dashboard() {
+  // You may want to share this state via context for cross-page add
+  const [incidents, setIncidents] = useState<Incident[]>(sampleIncidents);
+  const [messages, setMessages] = useState(sampleMessages);
   const [showMobileNav, setShowMobileNav] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    address: "",
+    priority: "medium",
+    category: "other",
+  });
+  // Add New Incident Handler
+  function handleAddIncident() {
+    if (!form.title || !form.description || !form.address) return;
+    const newIncident: Incident = {
+      id: String(Math.random()*100000|0),
+      title: form.title,
+      description: form.description,
+      location: { lat: 25.77, lng: -80.19 },
+      address: form.address,
+      priority: form.priority as any,
+      status: "open",
+      reportedBy: "Responder",
+      reportedAt: new Date().toISOString(),
+      category: form.category as any,
+    };
+    setIncidents([newIncident, ...incidents]);
+    setMessages([
+      {
+        id: String(Math.random()*100000|0),
+        title: "New Incident Reported",
+        content: newIncident.title,
+        priority: newIncident.priority as any,
+        timestamp: new Date().toISOString(),
+        read: false,
+        sender: "System",
+        type: "alert",
+      },
+      ...messages,
+    ]);
+    setForm({ title: "", description: "", address: "", priority: "medium", category: "other" });
+    setAddOpen(false);
+  }
   
+  // Stats
   const stats = {
-    totalIncidents: sampleIncidents.length,
-    openIncidents: sampleIncidents.filter(i => i.status === 'open').length,
-    inProgressIncidents: sampleIncidents.filter(i => i.status === 'in-progress').length,
-    resolvedIncidents: sampleIncidents.filter(i => i.status === 'resolved').length,
-    criticalIncidents: sampleIncidents.filter(i => i.priority === 'critical').length,
+    totalIncidents: incidents.length,
+    openIncidents: incidents.filter(i => i.status === 'open').length,
+    inProgressIncidents: incidents.filter(i => i.status === 'in-progress').length,
+    resolvedIncidents: incidents.filter(i => i.status === 'resolved').length,
+    criticalIncidents: incidents.filter(i => i.priority === 'critical').length,
     totalShelters: sampleShelters.length,
     openShelters: sampleShelters.filter(s => s.status === 'open').length,
     totalCapacity: sampleShelters.reduce((sum, s) => sum + s.capacity, 0),
     currentOccupancy: sampleShelters.reduce((sum, s) => sum + s.currentOccupancy, 0),
   };
-
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'critical': return 'bg-destructive text-destructive-foreground';
@@ -42,7 +89,6 @@ export default function Dashboard() {
       default: return 'bg-muted text-muted-foreground';
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open': return 'bg-warning text-warning-foreground';
@@ -94,10 +140,71 @@ export default function Dashboard() {
               </Button>
               <h1 className="text-2xl font-bold text-foreground">Response Dashboard</h1>
             </div>
-            <Button className="bg-secondary hover:bg-secondary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Add New Incident
-            </Button>
+            <Dialog open={addOpen} onOpenChange={setAddOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-secondary hover:bg-secondary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New Incident
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Add New Incident</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3">
+                  <Label>Title</Label>
+                  <Input
+                    value={form.title}
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="e.g. Family Trapped"
+                  />
+                  <Label>Address</Label>
+                  <Input
+                    value={form.address}
+                    onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="e.g. 123 Main St, Miami"
+                  />
+                  <Label>Description</Label>
+                  <Input
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Describe the incident"
+                  />
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Label>Priority</Label>
+                      <Select value={form.priority} onValueChange={v => setForm(f => ({ ...f, priority: v }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="critical">Critical</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex-1">
+                      <Label>Category</Label>
+                      <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="medical">Medical</SelectItem>
+                          <SelectItem value="rescue">Rescue</SelectItem>
+                          <SelectItem value="infrastructure">Infrastructure</SelectItem>
+                          <SelectItem value="evacuation">Evacuation</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button className="w-full mt-2" onClick={handleAddIncident}>Add Incident</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </header>
 
@@ -116,7 +223,6 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Open Incidents</CardTitle>
@@ -129,7 +235,6 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Shelters</CardTitle>
@@ -142,7 +247,6 @@ export default function Dashboard() {
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Shelter Occupancy</CardTitle>
@@ -156,8 +260,6 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Messages/Alerts */}
             <Card className="lg:col-span-2">
@@ -173,7 +275,7 @@ export default function Dashboard() {
               <CardContent>
                 <ScrollArea className="h-80">
                   <div className="space-y-4">
-                    {sampleMessages.map((message) => (
+                    {messages.slice(0,10).map((message) => (
                       <div
                         key={message.id}
                         className={`p-4 rounded-lg border-l-4 ${
@@ -203,7 +305,6 @@ export default function Dashboard() {
                 </ScrollArea>
               </CardContent>
             </Card>
-
             {/* Recent Incidents */}
             <Card>
               <CardHeader>
@@ -218,7 +319,7 @@ export default function Dashboard() {
               <CardContent>
                 <ScrollArea className="h-80">
                   <div className="space-y-4">
-                    {sampleIncidents.map((incident) => (
+                    {incidents.slice(0,10).map((incident) => (
                       <div key={incident.id} className="p-3 rounded-lg border">
                         <div className="flex items-start justify-between mb-2">
                           <h4 className="font-medium text-sm text-foreground">
