@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Menu, X, Plus, MapPin, AlertTriangle, Shield, Building2, Zap, Construction, Waves } from "lucide-react";
 import { sampleIncidents, sampleHazards, sampleShelters, Incident } from "@/data/sampleData";
+import IncidentMap from "@/components/IncidentMap";
 
 export default function Map() {
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -191,54 +192,38 @@ export default function Map() {
 
         <div className="flex-1 flex">
           {/* Map Area */}
-          <div className="flex-1 relative">
-            {/* Placeholder for Google Maps integration */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-              <div className="text-center p-8 bg-card rounded-lg shadow-lg border max-w-xl">
-                <MapPin className="w-12 h-12 mx-auto mb-4 text-primary" />
-                <h3 className="text-xl font-semibold mb-2">Interactive Map</h3>
-                <p className="text-muted-foreground">
-                  Google Maps integration would be embedded here, showing:
-                  <br />• Real-time incident markers
-                  <br />• Hazard zones and warnings
-                  <br />• Shelter locations and capacity
-                  <br />• Click-to-report functionality
-                </p>
-                <div className="text-lg mt-4 text-blue-700 font-semibold">
-                  Demo: {incidents.length} incidents, {sampleHazards.length} hazards, {sampleShelters.length} shelters
-                </div>
-              </div>
-            </div>
+          <div className="flex-1 relative" style={{ minHeight: 480 }}>
+            <IncidentMap
+              incidents={incidents}
+              hazards={sampleHazards}
+              shelters={sampleShelters}
+              onMapClick={latlng => {
+                setShowNewIncidentForm(true);
+              }}
+              onIncidentClick={incident => {}}
+            />
             {/* Map Filters */}
             <div className="absolute top-4 left-4 space-y-2">
               <Button
                 variant={selectedFilter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedFilter('all')}
-              >
-                All
-              </Button>
+              >All</Button>
               <Button
                 variant={selectedFilter === 'incidents' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedFilter('incidents')}
-              >
-                Incidents
-              </Button>
+              >Incidents</Button>
               <Button
                 variant={selectedFilter === 'hazards' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedFilter('hazards')}
-              >
-                Hazards
-              </Button>
+              >Hazards</Button>
               <Button
                 variant={selectedFilter === 'shelters' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedFilter('shelters')}
-              >
-                Shelters
-              </Button>
+              >Shelters</Button>
             </div>
           </div>
           {/* Side Panel */}
