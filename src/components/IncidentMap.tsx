@@ -84,6 +84,8 @@ export default function IncidentMap({
           </div>
         </InfoWindow>
       )}
+      
+      
     </GoogleMap>
   );
 }

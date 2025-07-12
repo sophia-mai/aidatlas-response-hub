@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,17 @@ export default function Map() {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [incidents, setIncidents] = useState<Incident[]>(sampleIncidents);
   const [showNewIncidentForm, setShowNewIncidentForm] = useState(false);
+  const [clickedLatLng, setClickedLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
     address: '',
     priority: 'medium',
-    category: 'other'
+    category: 'other',
+    lat: "",
+    lng: "",
   });
+  
 
   // Quick-add new incident
   function handleSubmitIncident() {
@@ -41,7 +46,7 @@ export default function Map() {
       category: form.category as any,
     }, ...incidents]);
     setShowNewIncidentForm(false);
-    setForm({ title: '', description: '', address: '', priority: 'medium', category: 'other' });
+    setForm({ title: '', description: '', address: '', priority: 'medium', category: 'other', lat: null, lng: null });
   }
 
   const getHazardIcon = (type: string) => {
@@ -198,7 +203,8 @@ export default function Map() {
               hazards={sampleHazards}
               shelters={sampleShelters}
               onMapClick={latlng => {
-                setShowNewIncidentForm(true);
+                setClickedLatLng(latlng);      // save clicked coordinates
+                setShowNewIncidentForm(true);  // open dialog
               }}
               onIncidentClick={incident => {}}
             />
