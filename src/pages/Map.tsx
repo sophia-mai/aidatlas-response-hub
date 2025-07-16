@@ -12,11 +12,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Menu, X, Plus, MapPin, AlertTriangle, Shield, Building2, Zap, Construction, Waves } from "lucide-react";
 import { sampleIncidents, sampleHazards, sampleShelters, Incident } from "@/data/sampleData";
 import IncidentMap from "@/components/IncidentMap";
+import { onSnapshot, collection, addDoc } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+
 
 export default function Map() {
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [incidents, setIncidents] = useState<Incident[]>(sampleIncidents);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+
+useEffect(() => {
+  const unsub = onSnapshot(collection(db, "incidents"), (snap) => {
+    setIncidents(snap.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data()
+    } as Incident)));
+  });
+  return () => unsub();
+}, []);
+
   const [showNewIncidentForm, setShowNewIncidentForm] = useState(false);
   const [clickedLatLng, setClickedLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const [form, setForm] = useState({
@@ -28,26 +42,49 @@ export default function Map() {
     lat: "",
     lng: "",
   });
-  
+  const [pendingMarker, setPendingMarker] = useState<{lat: number, lng: number} | null>(null);
+
+  useEffect(() => {
+    if (showNewIncidentForm && clickedLatLng) {
+      setForm(f => ({
+        ...f,
+        lat: clickedLatLng.lat.toFixed(6),
+        lng: clickedLatLng.lng.toFixed(6),
+      }));
+    }
+    if (!showNewIncidentForm) {
+      setClickedLatLng(null);
+    }
+  }, [showNewIncidentForm, clickedLatLng]);
+
+
+
 
   // Quick-add new incident
-  function handleSubmitIncident() {
+  async function handleSubmitIncident() {
     if (!form.title || !form.address) return;
-    setIncidents([{
-      id: String(Math.random()*1e8|0),
-      title: form.title,
-      description: form.description,
-      location: { lat: 25.77, lng: -80.19 },
-      address: form.address,
-      priority: form.priority as any,
-      status: "open",
-      reportedBy: "Responder",
-      reportedAt: new Date().toISOString(),
-      category: form.category as any,
-    }, ...incidents]);
-    setShowNewIncidentForm(false);
-    setForm({ title: '', description: '', address: '', priority: 'medium', category: 'other', lat: null, lng: null });
+    try {
+      await addDoc(collection(db, "incidents"), {
+        title: form.title,
+        description: form.description,
+        location: {
+          lat: Number(form.lat) || 25.77,
+          lng: Number(form.lng) || -80.19
+        },
+        address: form.address,
+        priority: form.priority,
+        status: "open",
+        reportedBy: "Responder",
+        reportedAt: new Date().toISOString(),
+        category: form.category,
+      });
+      setShowNewIncidentForm(false);
+      setForm({ title: '', description: '', address: '', priority: 'medium', category: 'other', lat: '', lng: '' });
+    } catch (err: any) {
+      alert("Failed to submit incident: " + err.message);
   }
+}
+
 
   const getHazardIcon = (type: string) => {
     switch (type) {
@@ -143,6 +180,16 @@ export default function Map() {
                     onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))}
                     placeholder="Street address or coordinates"
                   />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="lat">Latitude</Label>
+                      <Input id="lat" value={form.lat} readOnly />
+                    </div>
+                    <div>
+                      <Label htmlFor="lng">Longitude</Label>
+                      <Input id="lng" value={form.lng} readOnly />
+                    </div>
+                  </div>
                   <Label>Description</Label>
                   <Textarea
                     id="description"
@@ -202,6 +249,7 @@ export default function Map() {
               incidents={incidents}
               hazards={sampleHazards}
               shelters={sampleShelters}
+              pendingMarker={clickedLatLng} 
               onMapClick={latlng => {
                 setClickedLatLng(latlng);      // save clicked coordinates
                 setShowNewIncidentForm(true);  // open dialog

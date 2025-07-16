@@ -14,6 +14,7 @@ export default function IncidentMap({
   shelters = sampleShelters,
   onMapClick,
   onIncidentClick,
+  pendingMarker,
 }) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -25,8 +26,8 @@ export default function IncidentMap({
 
   // Marker icons: you can use SVGs, or Google’s built-in colors
   const icons = {
-    incident: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
-    hazard: "http://maps.google.com/mapfiles/ms/icons/orange-dot.png",
+    incident: "http://maps.google.com/mapfiles/ms/icons/yellow-dot.png",
+    hazard: "http://maps.google.com/mapfiles/ms/icons/red-dot.png",
     shelter: "http://maps.google.com/mapfiles/ms/icons/green-dot.png",
   };
 
@@ -84,8 +85,18 @@ export default function IncidentMap({
           </div>
         </InfoWindow>
       )}
-      
-      
+
+      {pendingMarker && (
+        <Marker
+        position={pendingMarker}
+        icon={{
+            url: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+            scaledSize: new window.google.maps.Size(38, 38),
+        }}
+        // You may want to add animation: google.maps.Animation.DROP
+        />
+      )}
+
     </GoogleMap>
   );
 }
