@@ -20,6 +20,9 @@ import {
   Car
 } from "lucide-react";
 import { sampleShelters } from "@/data/sampleData";
+import IncidentMap from "@/components/IncidentMap";
+import { DirectionsRenderer } from "@react-google-maps/api";
+import { useRef } from "react";
 
 export default function Shelters() {
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -67,6 +70,11 @@ export default function Shelters() {
     totalCapacity: sampleShelters.reduce((sum, s) => sum + s.capacity, 0),
     totalOccupancy: sampleShelters.reduce((sum, s) => sum + s.currentOccupancy, 0),
   };
+
+  const [directionsResult, setDirectionsResult] = useState<google.maps.DirectionsResult | null>(null);
+  const [directionsToShelter, setDirectionsToShelter] = useState<null | { shelter: typeof sampleShelters[0] }>(null);
+  // For centering map on route/shelter
+  const mapRef = useRef<any>(null);
 
   return (
     <div className="flex min-h-screen bg-background">

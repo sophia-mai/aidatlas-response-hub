@@ -8,6 +8,21 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const mapContainerStyle = { width: "100%", height: "100%" };
 const center = { lat: 25.76, lng: -80.19 }; // Miami
 
+
+function haversineDistance(a: {lat: number, lng: number}, b: {lat: number, lng: number}) {
+  const toRad = (x: number) => (x * Math.PI) / 180;
+  const R = 6371000; // meters
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat), lat2 = toRad(b.lat);
+  const aComp = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(aComp), Math.sqrt(1-aComp));
+  return R * c; // distance in meters
+}
+
+
 export default function IncidentMap({
   incidents = sampleIncidents,
   hazards = sampleHazards,

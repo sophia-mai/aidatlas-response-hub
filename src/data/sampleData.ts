@@ -165,6 +165,66 @@ export const sampleShelters: Shelter[] = [
     amenities: ['Food Service', 'Medical Station'],
     contactPhone: '(305) 854-3321',
     lastUpdated: '2024-01-15T08:30:00Z'
+  },
+  {
+    id: '4',
+    name: "Central HS Shelter",
+    address: "100 Main St, City",
+    location: { lat: 37.773972, lng: -122.431297 },
+    capacity: 300,
+    currentOccupancy: 230,
+    status: 'open',
+    amenities: ['Food Service', 'Wi-Fi', 'Medical Station'],
+    contactPhone: '(415) 555-0100',
+    lastUpdated: '2024-06-10T08:00:00Z'
+  },
+  {
+    id: '5',
+    name: "City Rec Center",
+    address: "200 Rec Rd, City",
+    location: { lat: 37.7715, lng: -122.4233 },
+    capacity: 220,
+    currentOccupancy: 185,
+    status: 'open',
+    amenities: ['Food Service', 'Showers', 'Family Area'],
+    contactPhone: '(415) 555-0101',
+    lastUpdated: '2024-06-10T08:15:00Z'
+  },
+  {
+    id: '6',
+    name: "West Park Shelter",
+    address: "101 Park Ave, City",
+    location: { lat: 37.7810, lng: -122.4390 },
+    capacity: 150,
+    currentOccupancy: 92,
+    status: 'open',
+    amenities: ['Pet Area', 'Wi-Fi'],
+    contactPhone: '(415) 555-0102',
+    lastUpdated: '2024-06-10T08:30:00Z'
+  },
+  {
+    id: '7',
+    name: "Library Shelter",
+    address: "500 Book St, City",
+    location: { lat: 37.7870, lng: -122.4194 },
+    capacity: 100,
+    currentOccupancy: 100,
+    status: 'full',
+    amenities: ['Medical Station', 'Food Service'],
+    contactPhone: '(415) 555-0103',
+    lastUpdated: '2024-06-10T09:00:00Z'
+  },
+  {
+    id: '8',
+    name: "North Gym Shelter",
+    address: "900 Gym St, City",
+    location: { lat: 37.7640, lng: -122.4470 },
+    capacity: 80,
+    currentOccupancy: 53,
+    status: 'open',
+    amenities: ['Family Area', 'Showers'],
+    contactPhone: '(415) 555-0104',
+    lastUpdated: '2024-06-10T09:30:00Z'
   }
 ];
 
