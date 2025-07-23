@@ -1,4 +1,4 @@
-import { GoogleMap, Marker, InfoWindow, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, Marker, InfoWindow, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import { useState } from "react";
 import { sampleIncidents, sampleHazards, sampleShelters, Incident } from "@/data/sampleData";
 
@@ -22,6 +22,18 @@ function haversineDistance(a: {lat: number, lng: number}, b: {lat: number, lng: 
   return R * c; // distance in meters
 }
 
+type LatLng = { lat: number; lng: number };
+
+interface IncidentMapProps {
+  incidents?: Incident[];
+  hazards?: any[];
+  shelters?: any[];
+  onMapClick?: (latlng: LatLng) => void;
+  onIncidentClick?: (incident: Incident) => void;
+  pendingMarker?: LatLng | null;
+  center: LatLng;
+  directions?: google.maps.DirectionsResult | null;
+}
 
 export default function IncidentMap({
   incidents = sampleIncidents,
@@ -30,10 +42,14 @@ export default function IncidentMap({
   onMapClick,
   onIncidentClick,
   pendingMarker,
-}) {
+  center,
+  directions,
+}
+) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
   });
+  
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
 
   if (loadError) return <div>Error loading map</div>;
@@ -111,6 +127,7 @@ export default function IncidentMap({
         // You may want to add animation: google.maps.Animation.DROP
         />
       )}
+      {directions && <DirectionsRenderer directions={directions} />}
 
     </GoogleMap>
   );

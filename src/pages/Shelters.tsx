@@ -204,6 +204,31 @@ export default function Shelters() {
             </CardContent>
           </Card>
 
+          {/* Map with Exit Directions overlay and route */}
+          <div className="relative w-full h-96 mb-8">
+            <IncidentMap
+              center={directionsToShelter ? directionsToShelter.shelter.location : undefined}
+              directions={directionsResult}
+              shelters={sampleShelters}
+              onMapClick={() => {}}
+              onIncidentClick={() => {}}
+              pendingMarker={null}
+            />
+            {directionsToShelter && (
+              <Button
+                variant="destructive"
+                className="absolute top-4 right-4 z-50"
+                onClick={() => {
+                  setDirectionsResult(null);
+                  setDirectionsToShelter(null);
+                }}
+              >
+                Exit Directions
+              </Button>
+            )}
+          </div>
+
+
           {/* Shelter List */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredShelters.map((shelter) => (
@@ -266,7 +291,42 @@ export default function Shelters() {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={async () => {
+                          if (!window.navigator.geolocation || !shelter.location) {
+                            alert("Geolocation not supported.");
+                            return;
+                          }
+                          navigator.geolocation.getCurrentPosition(async pos => {
+                            const origin = {
+                              lat: pos.coords.latitude,
+                              lng: pos.coords.longitude
+                            };
+                            const destination = shelter.location;
+                            const directionsService = new window.google.maps.DirectionsService();
+                            directionsService.route(
+                              {
+                                origin,
+                                destination,
+                                travelMode: window.google.maps.TravelMode.DRIVING,
+                              },
+                              (result, status) => {
+                                if (status === window.google.maps.DirectionsStatus.OK && result) {
+                                  setDirectionsResult(result);
+                                  setDirectionsToShelter({ shelter }); // Save which shelter
+                                } else {
+                                  alert("Could not find directions.");
+                                }
+                              }
+                            );
+                          }, (err) => {
+                            alert("Could not get your location.");
+                          });
+                        }}
+                      >
                         <MapPin className="w-4 h-4 mr-1" />
                         Directions
                       </Button>

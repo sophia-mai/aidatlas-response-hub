@@ -249,7 +249,9 @@ useEffect(() => {
               incidents={incidents}
               hazards={sampleHazards}
               shelters={sampleShelters}
-              pendingMarker={clickedLatLng} 
+              pendingMarker={clickedLatLng}
+              center={{ lat: 25.77, lng: -80.19 }} // Provide a default center
+              directions={null} // Provide null or appropriate directions object
               onMapClick={latlng => {
                 setClickedLatLng(latlng);      // save clicked coordinates
                 setShowNewIncidentForm(true);  // open dialog
