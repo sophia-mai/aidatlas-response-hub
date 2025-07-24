@@ -45,17 +45,10 @@ useEffect(() => {
   const [pendingMarker, setPendingMarker] = useState<{lat: number, lng: number} | null>(null);
 
   useEffect(() => {
-    if (showNewIncidentForm && clickedLatLng) {
-      setForm(f => ({
-        ...f,
-        lat: clickedLatLng.lat.toFixed(6),
-        lng: clickedLatLng.lng.toFixed(6),
-      }));
-    }
     if (!showNewIncidentForm) {
       setClickedLatLng(null);
     }
-  }, [showNewIncidentForm, clickedLatLng]);
+  }, [showNewIncidentForm]);
 
 
 
@@ -253,8 +246,14 @@ useEffect(() => {
               center={{ lat: 25.77, lng: -80.19 }} // Provide a default center
               directions={null} // Provide null or appropriate directions object
               onMapClick={latlng => {
-                setClickedLatLng(latlng);      // save clicked coordinates
-                setShowNewIncidentForm(true);  // open dialog
+                setForm(f => ({
+                ...f,
+                lat: latlng.lat.toFixed(6),
+                lng: latlng.lng.toFixed(6),
+              }));
+              setClickedLatLng(latlng);
+              setShowNewIncidentForm(true);
+
               }}
               onIncidentClick={incident => {}}
             />

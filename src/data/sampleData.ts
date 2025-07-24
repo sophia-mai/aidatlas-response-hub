@@ -225,6 +225,66 @@ export const sampleShelters: Shelter[] = [
     amenities: ['Family Area', 'Showers'],
     contactPhone: '(415) 555-0104',
     lastUpdated: '2024-06-10T09:30:00Z'
+  },
+  {
+    id: '9',
+    name: 'The Home Depot',
+    address: '3031 NE Pine Island Rd, Cape Coral, FL 33909',
+    location: { lat: 26.681871, lng: -81.932632 },
+    capacity: 250,
+    currentOccupancy: 56,
+    status: 'open',
+    amenities: ['Food Service', 'Medical Station', 'Wi-Fi', 'Pet Area'],
+    contactPhone: '(239) 573-0066',
+    lastUpdated: '2024-01-15T10:45:00Z'
+  },
+  {
+    id: '10',
+    name: 'Target',
+    address: '1890 NE Pine Island Rd, Cape Coral, FL 33909',
+    location: { lat: 26.661411, lng: -81.931962 },
+    capacity: 200,
+    currentOccupancy: 32,
+    status: 'open',
+    amenities: ['Food Service', 'Showers'],
+    contactPhone: '(239) 458-3400',
+    lastUpdated: '2024-01-15T11:00:00Z'
+  },
+  {
+    id: '11',
+    name: 'Cape Coral Hospital',
+    address: '636 Del Prado Blvd S, Cape Coral, FL 33990',
+    location: { lat: 26.643013, lng: -81.939266 },
+    capacity: 360,
+    currentOccupancy: 310,
+    status: 'full',
+    amenities: ['Medical Station', 'Wi-Fi'],
+    contactPhone: '(239) 424-2000',
+    lastUpdated: '2024-01-15T09:55:00Z'
+  },
+  {
+    id: '12',
+    name: 'Walmart Supercenter',
+    address: '1619 Del Prado Blvd, Cape Coral, FL 33990',
+    location: { lat: 26.637159, lng: -81.939816 },
+    capacity: 180,
+    currentOccupancy: 15,
+    status: 'open',
+    amenities: ['Food Service', 'Medical Station', 'Parking'],
+    contactPhone: '(239) 458-6212',
+    lastUpdated: '2024-01-15T10:10:00Z'
+  },
+  {
+    id: '13',
+    name: 'St Andrew Catholic Church',
+    address: '2628 Del Prado Blvd S, Cape Coral, FL 33904',
+    location: { lat: 26.600389, lng: -81.938018 },
+    capacity: 120,
+    currentOccupancy: 80,
+    status: 'open',
+    amenities: ['Food Service', 'Family Area', 'Wi-Fi'],
+    contactPhone: '(239) 574-4545',
+    lastUpdated: '2024-01-15T09:30:00Z'
   }
 ];
 
