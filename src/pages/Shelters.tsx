@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect,useState } from "react";
 import Navigation from "@/components/Navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,21 @@ import { sampleShelters } from "@/data/sampleData";
 import IncidentMap from "@/components/IncidentMap";
 import { DirectionsRenderer } from "@react-google-maps/api";
 import { useRef } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/firebaseConfig";
+import type { Hazard } from "@/data/sampleData";
+
+function routeCrossesHazard(routePoints, hazards, radiusMeters = 50) {
+  if (!window.google || !window.google.maps) return false;
+  const { computeDistanceBetween } = window.google.maps.geometry.spherical;
+  return hazards.some(hazard => {
+    const hazardLatLng = new window.google.maps.LatLng(hazard.location.lat, hazard.location.lng);
+    return routePoints.some(pt => {
+      const ptLatLng = new window.google.maps.LatLng(pt.lat(), pt.lng());
+      return computeDistanceBetween(ptLatLng, hazardLatLng) < radiusMeters;
+    });
+  });
+}
 
 export default function Shelters() {
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -75,6 +90,59 @@ export default function Shelters() {
   const [directionsToShelter, setDirectionsToShelter] = useState<null | { shelter: typeof sampleShelters[0] }>(null);
   // For centering map on route/shelter
   const mapRef = useRef<any>(null);
+
+  const [directionsRequest, setDirectionsRequest] = useState<{
+    origin: { lat: number, lng: number },
+    destination: { lat: number, lng: number },
+    lastHazardIds?: string[]
+  } | null>(null);
+  const [hazards, setHazards] = useState<Hazard[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "hazards"), (snap) => {
+      setHazards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Hazard[]);
+    });
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (
+      !directionsResult ||
+      !hazards.length ||
+      !directionsRequest
+    ) return;
+
+    // Polyline points of the displayed route
+    const routePoints = directionsResult.routes[0].overview_path;
+    const blocked = routeCrossesHazard(routePoints, hazards);
+
+    if (blocked) {
+      alert(
+        "Warning: A new hazard is now blocking your current route. A safer route will be calculated if possible!"
+      );
+
+      const directionsService = new window.google.maps.DirectionsService();
+      directionsService.route(
+        {
+          origin: directionsRequest.origin,
+          destination: directionsRequest.destination,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === window.google.maps.DirectionsStatus.OK && result) {
+            setDirectionsResult(result);
+          } else {
+            alert(
+              "No alternative safe route could be found at this time. Proceed with caution or choose another shelter."
+            );
+          }
+        }
+      );
+    }
+  }, [hazards, directionsResult, directionsRequest]);
+
+
+
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -213,6 +281,7 @@ export default function Shelters() {
               onMapClick={() => {}}
               onIncidentClick={() => {}}
               pendingMarker={null}
+              hazards={hazards}
             />
             {directionsToShelter && (
               <Button
@@ -317,6 +386,7 @@ export default function Shelters() {
                                 if (status === window.google.maps.DirectionsStatus.OK && result) {
                                   setDirectionsResult(result);
                                   setDirectionsToShelter({ shelter }); // Save which shelter
+                                  setDirectionsRequest({ origin, destination });
                                 } else {
                                   alert("Could not find directions.");
                                 }

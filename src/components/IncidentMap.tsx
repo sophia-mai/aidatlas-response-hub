@@ -1,6 +1,7 @@
 import { GoogleMap, Marker, InfoWindow, DirectionsRenderer, useLoadScript } from "@react-google-maps/api";
 import { useState } from "react";
 import { sampleIncidents, sampleHazards, sampleShelters, Incident } from "@/data/sampleData";
+import { Polyline } from "@react-google-maps/api";
 
 // Fill in your Google Maps API key:
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -8,6 +9,34 @@ const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const mapContainerStyle = { width: "100%", height: "100%" };
 const center = { lat: 25.76, lng: -80.19 }; // Miami
 
+function isPointNearHazard(latLng, hazards, radiusMeters = 50) {
+  if (!window.google || !window.google.maps) return false;
+  const { computeDistanceBetween } = window.google.maps.geometry.spherical;
+  return hazards.some(hazard => {
+    const hazardLatLng = new window.google.maps.LatLng(hazard.location.lat, hazard.location.lng);
+    return computeDistanceBetween(latLng, hazardLatLng) < radiusMeters;
+  });
+}
+
+function getRouteSegments(overview_path, hazards, radiusMeters = 50) {
+  const dangerSegments = [];
+  const safeSegments = [];
+
+  for (let i = 0; i < overview_path.length - 1; i++) {
+    const a = overview_path[i];
+    const b = overview_path[i + 1];
+
+    const aNear = isPointNearHazard(a, hazards, radiusMeters);
+    const bNear = isPointNearHazard(b, hazards, radiusMeters);
+
+    if (aNear || bNear) {
+      dangerSegments.push([a, b]);
+    } else {
+      safeSegments.push([a, b]);
+    }
+  }
+  return { dangerSegments, safeSegments };
+}
 
 function haversineDistance(a: {lat: number, lng: number}, b: {lat: number, lng: number}) {
   const toRad = (x: number) => (x * Math.PI) / 180;
@@ -48,6 +77,7 @@ export default function IncidentMap({
 ) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: ['geometry'],
   });
   
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
@@ -128,6 +158,41 @@ export default function IncidentMap({
         />
       )}
       {directions && <DirectionsRenderer directions={directions} />}
+
+      {directions && hazards?.length > 0 && (() => {
+        const overview_path = directions.routes[0].overview_path;
+        const { dangerSegments, safeSegments } = getRouteSegments(overview_path, hazards, 50); // radiusMeters
+        return (
+            <>
+            {/* Red danger segments */}
+            {dangerSegments.map((seg, idx) => (
+                <Polyline
+                key={`danger-${idx}`}
+                path={seg}
+                options={{
+                    strokeColor: 'red',
+                    strokeOpacity: 0.85,
+                    strokeWeight: 6,
+                    zIndex: 100,
+                }}
+                />
+            ))}
+            {/* Safe segments in primary color */}
+            {safeSegments.map((seg, idx) => (
+                <Polyline
+                key={`safe-${idx}`}
+                path={seg}
+                options={{
+                    strokeColor: '#1976d2',
+                    strokeOpacity: 0.70,
+                    strokeWeight: 5,
+                    zIndex: 99,
+                }}
+                />
+            ))}
+            </>
+        );
+        })()}
 
     </GoogleMap>
   );
