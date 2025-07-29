@@ -159,6 +159,15 @@ export default function IncidentMap({
       )}
       {directions && <DirectionsRenderer directions={directions} />}
 
+      {incidents.map((incident) => (
+        <Marker
+            key={incident.id}
+            position={incident.location}
+            icon={icons.incident}
+            onClick={() => setSelectedIncident(incident)}
+        />
+        ))}
+
       {directions && hazards?.length > 0 && (() => {
         const overview_path = directions.routes[0].overview_path;
         const { dangerSegments, safeSegments } = getRouteSegments(overview_path, hazards, 50); // radiusMeters

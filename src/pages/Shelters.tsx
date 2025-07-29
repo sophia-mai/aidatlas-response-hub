@@ -23,18 +23,23 @@ import { sampleShelters } from "@/data/sampleData";
 import IncidentMap from "@/components/IncidentMap";
 import { DirectionsRenderer } from "@react-google-maps/api";
 import { useRef } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { addDoc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import type { Hazard } from "@/data/sampleData";
+import type { Incident } from "@/data/sampleData"; 
 
-function routeCrossesHazard(routePoints, hazards, radiusMeters = 50) {
+
+
+
+
+function routeCrossesAny(routePoints, pointsOfInterest, radiusMeters = 50) {
   if (!window.google || !window.google.maps) return false;
   const { computeDistanceBetween } = window.google.maps.geometry.spherical;
-  return hazards.some(hazard => {
-    const hazardLatLng = new window.google.maps.LatLng(hazard.location.lat, hazard.location.lng);
+  return pointsOfInterest.some(item => {
+    const poiLatLng = new window.google.maps.LatLng(item.location.lat, item.location.lng);
     return routePoints.some(pt => {
       const ptLatLng = new window.google.maps.LatLng(pt.lat(), pt.lng());
-      return computeDistanceBetween(ptLatLng, hazardLatLng) < radiusMeters;
+      return computeDistanceBetween(ptLatLng, poiLatLng) < radiusMeters;
     });
   });
 }
@@ -98,6 +103,62 @@ export default function Shelters() {
   } | null>(null);
   const [hazards, setHazards] = useState<Hazard[]>([]);
 
+  const [hazardDialogOpen, setHazardDialogOpen] = useState(false);
+  const [hazardForm, setHazardForm] = useState({
+    title: "",
+    address: "",
+    type: "flood",
+    severity: "medium",
+    isActive: true,
+    description: "",
+    lat: "",
+    lng: "",
+  });
+
+  const [incidents, setIncidents] = useState<Incident[]>([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "incidents"), (snap) => {
+      setIncidents(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Incident[]);
+    });
+    return () => unsub();
+  }, []);
+
+  async function submitHazard() {
+    if (!hazardForm.title || !hazardForm.address || !hazardForm.lat || !hazardForm.lng) {
+      alert("All fields are required!");
+      return;
+    }
+    await addDoc(collection(db, "hazards"), {
+      title: hazardForm.title,
+      address: hazardForm.address,
+      type: hazardForm.type,
+      severity: hazardForm.severity,
+      isActive: hazardForm.isActive,
+      description: hazardForm.description,
+      location: {
+        lat: Number(hazardForm.lat),
+        lng: Number(hazardForm.lng)
+      },
+      reportedAt: new Date().toISOString()
+    });
+    // Optionally reset/close
+    setHazardDialogOpen(false);
+    setHazardForm({
+      title: "",
+      address: "",
+      type: "flood",
+      severity: "medium",
+      isActive: true,
+      description: "",
+      lat: "",
+      lng: "",
+    });
+  }
+  
+  
+
+
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "hazards"), (snap) => {
       setHazards(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Hazard[]);
@@ -114,12 +175,15 @@ export default function Shelters() {
 
     // Polyline points of the displayed route
     const routePoints = directionsResult.routes[0].overview_path;
-    const blocked = routeCrossesHazard(routePoints, hazards);
+    const blockedByHazard = routeCrossesAny(routePoints, hazards, 100);
+    const blockedByIncident = routeCrossesAny(routePoints, incidents, 100);
 
-    if (blocked) {
-      alert(
-        "Warning: A new hazard is now blocking your current route. A safer route will be calculated if possible!"
-      );
+    if (blockedByHazard || blockedByIncident) {
+      let cause = (blockedByHazard ? "hazard" : "incident");
+        alert(
+          `Warning: A new ${cause} is now blocking your current route. A safer route will be calculated if possible!`
+        );
+
 
       const directionsService = new window.google.maps.DirectionsService();
       directionsService.route(
@@ -282,6 +346,7 @@ export default function Shelters() {
               onIncidentClick={() => {}}
               pendingMarker={null}
               hazards={hazards}
+              incidents={incidents} 
             />
             {directionsToShelter && (
               <Button
