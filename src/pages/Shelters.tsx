@@ -27,8 +27,7 @@ import { addDoc, collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import type { Hazard } from "@/data/sampleData";
 import type { Incident } from "@/data/sampleData"; 
-
-
+import { useToast } from "@/hooks/use-toast";
 
 
 
@@ -45,6 +44,8 @@ function routeCrossesAny(routePoints, pointsOfInterest, radiusMeters = 50) {
 }
 
 export default function Shelters() {
+  const { toast } = useToast(); 
+  const hasShownBlockWarning = useRef(false);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -166,44 +167,94 @@ export default function Shelters() {
     return () => unsub();
   }, []);
 
+  // useEffect(() => {
+  //   if (
+  //     !directionsResult ||
+  //     !hazards.length ||
+  //     !directionsRequest
+  //   ) return;
+
+  //   // Polyline points of the displayed route
+  //   const routePoints = directionsResult.routes[0].overview_path;
+  //   const blockedByHazard = routeCrossesAny(routePoints, hazards, 100);
+  //   const blockedByIncident = routeCrossesAny(routePoints, incidents, 100);
+
+  //   if (blockedByHazard || blockedByIncident) {
+  //     let cause = (blockedByHazard ? "hazard" : "incident");
+  //       alert(
+  //         `Warning: A new ${cause} is now blocking your current route. A safer route will be calculated if possible!`
+  //       );
+
+
+  //     const directionsService = new window.google.maps.DirectionsService();
+  //     directionsService.route(
+  //       {
+  //         origin: directionsRequest.origin,
+  //         destination: directionsRequest.destination,
+  //         travelMode: window.google.maps.TravelMode.DRIVING,
+  //       },
+  //       (result, status) => {
+  //         if (status === window.google.maps.DirectionsStatus.OK && result) {
+  //           setDirectionsResult(result);
+  //         } else {
+  //           alert(
+  //             "No alternative safe route could be found at this time. Proceed with caution or choose another shelter."
+  //           );
+  //         }
+  //       }
+  //     );
+  //   }
+  // }, [hazards, directionsResult, directionsRequest]);
+
   useEffect(() => {
-    if (
-      !directionsResult ||
-      !hazards.length ||
-      !directionsRequest
-    ) return;
+  if (
+    !directionsResult ||
+    (!hazards.length && !incidents.length) ||
+    !directionsRequest
+  ) return;
 
-    // Polyline points of the displayed route
-    const routePoints = directionsResult.routes[0].overview_path;
-    const blockedByHazard = routeCrossesAny(routePoints, hazards, 100);
-    const blockedByIncident = routeCrossesAny(routePoints, incidents, 100);
+  const routePoints = directionsResult.routes[0].overview_path;
+  const blockedByHazard = routeCrossesAny(routePoints, hazards, 100);
+  const blockedByIncident = routeCrossesAny(routePoints, incidents, 100);
 
-    if (blockedByHazard || blockedByIncident) {
-      let cause = (blockedByHazard ? "hazard" : "incident");
-        alert(
-          `Warning: A new ${cause} is now blocking your current route. A safer route will be calculated if possible!`
-        );
-
-
-      const directionsService = new window.google.maps.DirectionsService();
-      directionsService.route(
-        {
-          origin: directionsRequest.origin,
-          destination: directionsRequest.destination,
-          travelMode: window.google.maps.TravelMode.DRIVING,
-        },
-        (result, status) => {
-          if (status === window.google.maps.DirectionsStatus.OK && result) {
-            setDirectionsResult(result);
-          } else {
-            alert(
-              "No alternative safe route could be found at this time. Proceed with caution or choose another shelter."
-            );
-          }
-        }
-      );
+  if (blockedByHazard || blockedByIncident) {
+    // Show toast only once until route is unblocked
+    if (!hasShownBlockWarning.current) {
+      let cause = blockedByHazard ? "hazard" : "incident";
+      toast({
+        title: "Route Blocked",
+        description: `A new ${cause} is now blocking your current route. A safer route will be calculated if possible!`,
+        // Remove "variant" if it's not supported—add duration if you want
+        duration: 8000,
+      });
+      hasShownBlockWarning.current = true;
     }
-  }, [hazards, directionsResult, directionsRequest]);
+
+    // Reroute (doesn't matter, this won't loop infinitely as directions will change)
+    const directionsService = new window.google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin: directionsRequest.origin,
+        destination: directionsRequest.destination,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === window.google.maps.DirectionsStatus.OK && result) {
+          setDirectionsResult(result);
+        } else {
+          toast({
+            title: "No Alternative Route",
+            description: "No alternative safe route could be found. Proceed with caution or choose another shelter.",
+            duration: 8000,
+          });
+        }
+      }
+    );
+  } else if (!blockedByHazard && !blockedByIncident && hasShownBlockWarning.current) {
+    // Allow new warning if route becomes unblocked
+    hasShownBlockWarning.current = false;
+  }
+}, [hazards, incidents, directionsResult, directionsRequest]);
 
 
 
